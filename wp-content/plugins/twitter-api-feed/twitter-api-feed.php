@@ -317,7 +317,8 @@ add_shortcode( 'tweets', 'lastest_tweets_shortcode' );
 // get twitters account info
 function user_info_func(){
 
-    $screen_name = "dessainsaraiva";
+    global $current_user;
+    $screen_name = $current_user->user_login ;
 
     if( ! function_exists('twitter_api_get') ){
         require_once dirname(__FILE__).'/api/twitter-api.php';
