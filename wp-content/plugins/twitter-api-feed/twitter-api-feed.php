@@ -14,6 +14,7 @@
  * @return array blocks of html expected by the widget
  */
 function latest_tweets_render( $screen_name, $count, $rts, $ats, $pop = 0 ){
+
     try {
         if( ! function_exists('twitter_api_get') ){
             require_once dirname(__FILE__).'/api/twitter-api.php';
@@ -272,6 +273,7 @@ class Latest_Tweets_Widget extends WP_Widget {
         $title = $args['before_title'] . apply_filters('widget_title', $title, $instance, $this->id_base ) . $args['after_title'];
         // by default tweets are rendered as an unordered list
 
+       // use the WP account username as twitters
        global $current_user;
        $screen_name = $current_user->user_login ;
 
@@ -301,16 +303,10 @@ class Latest_Tweets_Widget extends WP_Widget {
 function latest_tweets_register_widget(){
     return register_widget('Latest_Tweets_Widget');
 }
-
 add_action( 'widgets_init', 'latest_tweets_register_widget' );
 
-
-
 function lastest_tweets_shortcode( $atts ){
-//    $screen_name = isset($atts['user']) ? trim($atts['user'],' @') : '';
-
-    $screen_name = 'WebSummit';
-
+    $screen_name = isset($atts['user']) ? trim($atts['user'],' @') : '';
     $num = isset($atts['max']) ? (int) $atts['max'] : 5;
     return latest_tweets_render_html( $screen_name, $num, true, false );
 }
@@ -318,11 +314,46 @@ function lastest_tweets_shortcode( $atts ){
 add_shortcode( 'tweets', 'lastest_tweets_shortcode' );
 
 
+// get twitters account info
+function user_info_func(){
 
-function user_info_func( $atts ){
+    $screen_name = "dessainsaraiva";
 
-    $link = esc_html( 'https://api.twitter.com/1.1/users/show.json');
-    echo 'teste' . $link;
+    if( ! function_exists('twitter_api_get') ){
+        require_once dirname(__FILE__).'/api/twitter-api.php';
+        twitter_api_load_textdomain();
+    }
+    // caching full data set, not just twitter api caching
+    // caching is disabled by default in debug mode, but still filtered.
+    $cachettl = (int) apply_filters('latest_tweets_cache_seconds', WP_DEBUG ? 0 : 300 );
+    if( $cachettl ){
+        $arguments = func_get_args();
+        $cachekey = 'latest_tweets_'.implode('_', $arguments );
+        if( ! function_exists('_twitter_api_cache_get') ){
+            twitter_api_include('core');
+        }
+        if( $rendered = _twitter_api_cache_get($cachekey) ){
+            return $rendered;
+        }
+    }
+    // Check configuration before use
+    if( ! twitter_api_configured() ){
+        throw new Exception( __('Plugin not fully configured','twitter-api') );
+    }
+
+    $trim_user = false;
+    $include_rts = ! empty($rts);
+    $exclude_replies = empty($ats);
+    $params = compact('exclude_replies','include_rts','trim_user','screen_name');
+
+    $user_info = twitter_api_get('users/show', $params);
+
+    echo '<p> Hello '.$user_info['name'] .'<br /> ';
+    echo 'You have '.$user_info['followers_count'] .' followers';
+    echo '    and '.$user_info['friends_count'] .' friends </p> ';
+    echo '<img src=" ' . $user_info['profile_image_url_https'] . '"> </img>';
+
+
 
 }
 

@@ -10,7 +10,7 @@ do_action( 'woocommerce_account_navigation' );
     <div class="woocommerce-MyAccount-content">
         Twitter info:
         <?php
-            echo do_shortcode('[user_info]');
+            print_r( do_shortcode('[user_info]'));
         ?>
     </div>
 <?php
